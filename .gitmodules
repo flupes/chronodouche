@@ -1,0 +1,3 @@
+[submodule "lib/Adafruit_LED_Backpack"]
+	path = lib/Adafruit_LED_Backpack
+	url = git@github.com:flupes/Adafruit_LED_Backpack.git
