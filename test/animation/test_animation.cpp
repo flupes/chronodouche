@@ -1,3 +1,6 @@
+// Test with:
+// pio test -e miniultra8 -f animation
+
 #include <Adafruit_GFX.h>
 #include <Adafruit_LEDBackpack.h>
 #include <LowPower.h>
