@@ -22,18 +22,12 @@ void test_rotate_right(void) {
   TEST_ASSERT_EQUAL_UINT8(start, data);
 }
 
-#if defined(ARDUINO)
 #include <Arduino.h>
 void setup() {
-#else
-int main(int argc, char **argv) {
-#endif
   UNITY_BEGIN();
   RUN_TEST(test_rotate_left);
   RUN_TEST(test_rotate_right);
   UNITY_END();
 }
 
-#if defined(ARDUINO)
 void loop() {}
-#endif
