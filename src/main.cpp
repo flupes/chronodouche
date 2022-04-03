@@ -8,17 +8,36 @@
 Adafruit_BicolorMatrix matrix = Adafruit_BicolorMatrix();
 
 const uint8_t BOTTOM_BAR[] = {0x0, 0x40, 0x42, 0x62, 0x66, 0x76, 0x7e};
-const uint8_t BOTTOM_BAR_LEN = sizeof(BOTTOM_BAR);
+const size_t BOTTOM_BAR_LEN = sizeof(BOTTOM_BAR);
 
-const uint32_t k8sSleepCycles = 1;
+const size_t k8sSleepCycles = 3;
 const uint32_t kAnimIntervalMs = 150;
-const uint32_t kDigitIntervalMs = 6 * 1000;
+const uint32_t kDigitIntervalMs = 60l * 1000l;  // int is 16 bit only on the ATmega328p so
+                                                // we need to qualify with long to do the math!
 const uint32_t kBbarIntervalMs = kDigitIntervalMs / BOTTOM_BAR_LEN;
 const uint32_t kPirStabilizationMs = 8 * 1000;
-const uint32_t kPeriodBeforeSleepMs = kPirStabilizationMs + 8 * 1000;
+const uint32_t kPeriodBeforeSleepMs = kPirStabilizationMs + 20 * 1000;
 
 const uint8_t kPirPowerPin = 11;
 const uint8_t kPirOutputPin = 10;
+
+/*
+Issue with int/uint32:
+https://community.platformio.org/t/int32-t-actually-16-bit-with-atmega328p-and-arduino/21061
+
+#define xstr(s) str(s)
+#define str(s) #s
+#define PRINT_SIZE_OF(type) \
+  Serial.println("Size of " str(type) " is: " + String(sizeof(type) * 8) + " bits");
+
+    PRINT_SIZE_OF(int);
+    PRINT_SIZE_OF(int32_t);
+    PRINT_SIZE_OF(uint32_t);
+    PRINT_SIZE_OF(int_least32_t);
+    PRINT_SIZE_OF(uint_least32_t);
+    PRINT_SIZE_OF(int64_t);
+    PRINT_SIZE_OF(uint64_t);
+*/
 
 void StartPir() {
   // Provide power to the PIR (<1ma)
@@ -47,14 +66,21 @@ void StopDisplay() {
 }
 
 int UpdateDisplay(uint32_t start, int number) {
+  static bool firstCall = true;
   static uint8_t left_rain = 0xb0;
   static uint8_t right_rain = 0x0b;
   static int bbar = 0;
-  static uint32_t animElapsed = millis();
-  static uint32_t bbarElapsed = millis();
-  static uint32_t digitElapsed = millis();
+  static uint32_t animElapsed = 0;
+  static uint32_t bbarElapsed = 0;
+  static uint32_t digitElapsed = 0;
 
   uint32_t now = millis();
+  if (firstCall) {
+    animElapsed = now;
+    bbarElapsed = now;
+    digitElapsed = now;
+    firstCall = false;
+  }
 
   if ((now - animElapsed) > kAnimIntervalMs) {
     left_rain = RotateRight(left_rain, 1);
@@ -158,6 +184,8 @@ void loop() {
     Serial.begin(9600);
     Serial.println("WAKEUP");
 
+    // Serial.println(kDigitIntervalMs);
+    // Serial.println(kBbarIntervalMs);
     // Only check movement every n 8s cycles
     StartPir();
     lastWakeup = millis();
@@ -185,6 +213,5 @@ void loop() {
   }  // skip wakeup periods
 
   // Go to sleep
-  // delay(4000);
-  LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_ON);
+  LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_ON);
 }
