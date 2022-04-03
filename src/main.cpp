@@ -15,43 +15,35 @@ const uint32_t kAnimIntervalMs = 150;
 const uint32_t kDigitIntervalMs = 60l * 1000l;  // int is 16 bit only on the ATmega328p so
                                                 // we need to qualify with long to do the math!
 const uint32_t kBbarIntervalMs = kDigitIntervalMs / BOTTOM_BAR_LEN;
-const uint32_t kPirStabilizationMs = 8 * 1000;
-const uint32_t kPeriodBeforeSleepMs = kPirStabilizationMs + 20 * 1000;
+const uint32_t kPirStabilizationMs = 8l * 1000l;
+const uint32_t kPeriodBeforeSleepMs = kPirStabilizationMs + 20l * 1000l;
 
+const uint8_t kBuiltinLed = 13;
 const uint8_t kPirPowerPin = 11;
 const uint8_t kPirOutputPin = 10;
-
-/*
-Issue with int/uint32:
-https://community.platformio.org/t/int32-t-actually-16-bit-with-atmega328p-and-arduino/21061
-
-#define xstr(s) str(s)
-#define str(s) #s
-#define PRINT_SIZE_OF(type) \
-  Serial.println("Size of " str(type) " is: " + String(sizeof(type) * 8) + " bits");
-
-    PRINT_SIZE_OF(int);
-    PRINT_SIZE_OF(int32_t);
-    PRINT_SIZE_OF(uint32_t);
-    PRINT_SIZE_OF(int_least32_t);
-    PRINT_SIZE_OF(uint_least32_t);
-    PRINT_SIZE_OF(int64_t);
-    PRINT_SIZE_OF(uint64_t);
-*/
 
 void StartPir() {
   // Provide power to the PIR (<1ma)
   digitalWrite(kPirPowerPin, HIGH);
+
+  const uint32_t cycles = 5;
+  const uint32_t onPeriod = 25;
+  const uint32_t offPeriod = (kPirStabilizationMs - cycles * onPeriod) / cycles;
   // Wait enough to get a stable reading
-  delay(kPirStabilizationMs);
-  Serial.println("PIR ON");
+  for (uint8_t c = 0; c < cycles; c++) {
+    digitalWrite(kBuiltinLed, HIGH);
+    delay(onPeriod);
+    digitalWrite(kBuiltinLed, LOW);
+    delay(offPeriod);
+  }
+  // Serial.println("PIR ON");
 }
 
 void StopPir() { digitalWrite(kPirPowerPin, LOW); }
 
 void StartDisplay() {
   matrix.begin(0x74);  // pass in the address
-  matrix.setRotation(3);
+  matrix.setRotation(0);
   matrix.setBrightness(15);
 }
 
@@ -152,6 +144,7 @@ State UpdateState(State state, bool motion, uint32_t start) {
       } else {
         if ((now - lastMotion) > kPeriodBeforeSleepMs) {
           state = State::STANDBY;
+          StopDisplay();
         }
       }
       break;
@@ -174,44 +167,39 @@ void setup() {
 void loop() {
   static uint32_t counter = 0;
 
-  uint32_t lastWakeup = 0;
-  int minutes = 0;
-  State state = State::STANDBY;
+  digitalWrite(kBuiltinLed, HIGH);
+  delay(250);
+  digitalWrite(kBuiltinLed, LOW);
+
+  // Serial.begin(9600);
+  // Serial.println(counter);
 
   if (counter % k8sSleepCycles == 0) {
+    uint32_t lastWakeup = 0;
+    int minutes = 0;
+    State state = State::STANDBY;
     Configure();
-
-    Serial.begin(9600);
-    Serial.println("WAKEUP");
-
-    // Serial.println(kDigitIntervalMs);
-    // Serial.println(kBbarIntervalMs);
     // Only check movement every n 8s cycles
     StartPir();
     lastWakeup = millis();
     while (true) {
       uint8_t input = digitalRead(kPirOutputPin);
-      // Serial.print("motion=");
-      // Serial.print(input);
-      bool motion = (HIGH == input);
-      state = UpdateState(state, motion, lastWakeup);
+      state = UpdateState(state, (HIGH == input), lastWakeup);
       if (state == State::ACTIVE) {
         minutes = UpdateDisplay(lastWakeup, minutes);
-      } else if (state == State::STANDBY) {
-        break;
+      } else {
+        if (state == State::STANDBY) {
+          break;
+        }
       }
-      // Serial.print(" / new state=");
-      // Serial.println((uint8_t)state);
-      // if (state == State::STANDBY) {
-      //   break;
-      // }
       delay(10);  // no real reason but to not hammer the display?
     }
     StopPir();
-    StopDisplay();
-    Serial.end();
   }  // skip wakeup periods
 
+  // Serial.println("SLEEP");
+  // Serial.end();
   // Go to sleep
   LowPower.powerDown(SLEEP_8S, ADC_OFF, BOD_ON);
+  counter++;
 }
