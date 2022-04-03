@@ -14,8 +14,8 @@ const uint32_t k8sSleepCycles = 1;
 const uint32_t kAnimIntervalMs = 150;
 const uint32_t kDigitIntervalMs = 6 * 1000;
 const uint32_t kBbarIntervalMs = kDigitIntervalMs / BOTTOM_BAR_LEN;
-const uint32_t kPirStabilizationMs = 6 * 1000;
-const uint32_t kPeriodBeforeSleepMs = 8 * 1000;
+const uint32_t kPirStabilizationMs = 8 * 1000;
+const uint32_t kPeriodBeforeSleepMs = kPirStabilizationMs + 8 * 1000;
 
 const uint8_t kPirPowerPin = 11;
 const uint8_t kPirOutputPin = 10;
@@ -46,10 +46,9 @@ void StopDisplay() {
   pinMode(A5, INPUT_PULLUP);
 }
 
-bool UpdateDisplay(uint32_t start) {
+int UpdateDisplay(uint32_t start, int number) {
   static uint8_t left_rain = 0xb0;
   static uint8_t right_rain = 0x0b;
-  static int digit = 0;
   static int bbar = 0;
   static uint32_t animElapsed = millis();
   static uint32_t bbarElapsed = millis();
@@ -67,11 +66,15 @@ bool UpdateDisplay(uint32_t start) {
     bbarElapsed = now;
   }
   if ((now - digitElapsed) > kDigitIntervalMs) {
-    digit = (digit + 1) % 10;
+    number++;
     digitElapsed = now;
   }
   matrix.clear();
-  matrix.drawBitmap(0, 0, DIGITS[digit], 8, 8, LED_YELLOW);
+  uint8_t color = LED_YELLOW;
+  if (number > 9) {
+    color = LED_RED;
+  }
+  matrix.drawBitmap(0, 0, DIGITS[number % 10], 8, 8, color);
   for (uint8_t b = 0; b < 8; b++) {
     const uint8_t mask = 1 << b;
     if (BOTTOM_BAR[bbar] & mask) {
@@ -85,11 +88,7 @@ bool UpdateDisplay(uint32_t start) {
     }
   }
   matrix.writeDisplay();
-  if ((now - start) > 10 * kDigitIntervalMs) {
-    return true;
-  } else {
-    return false;
-  }
+  return number;
 }
 
 enum class State { STANDBY, WAITING, ACTIVE, FROZEN };
@@ -150,6 +149,7 @@ void loop() {
   static uint32_t counter = 0;
 
   uint32_t lastWakeup = 0;
+  int minutes = 0;
   State state = State::STANDBY;
 
   if (counter % k8sSleepCycles == 0) {
@@ -163,18 +163,21 @@ void loop() {
     lastWakeup = millis();
     while (true) {
       uint8_t input = digitalRead(kPirOutputPin);
-      Serial.print("motion=");
-      Serial.print(input);
+      // Serial.print("motion=");
+      // Serial.print(input);
       bool motion = (HIGH == input);
       state = UpdateState(state, motion, lastWakeup);
       if (state == State::ACTIVE) {
-        UpdateDisplay(lastWakeup);
+        minutes = UpdateDisplay(lastWakeup, minutes);
       } else if (state == State::STANDBY) {
         break;
       }
-      delay(200);  // no real reason but to not hammer the display?
-      Serial.print(" / new state=");
-      Serial.println((uint8_t)state);
+      // Serial.print(" / new state=");
+      // Serial.println((uint8_t)state);
+      // if (state == State::STANDBY) {
+      //   break;
+      // }
+      delay(10);  // no real reason but to not hammer the display?
     }
     StopPir();
     StopDisplay();
@@ -182,6 +185,6 @@ void loop() {
   }  // skip wakeup periods
 
   // Go to sleep
-  delay(4000);
-  // LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_ON);
+  // delay(4000);
+  LowPower.powerDown(SLEEP_4S, ADC_OFF, BOD_ON);
 }
