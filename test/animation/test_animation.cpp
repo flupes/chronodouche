@@ -21,7 +21,7 @@ void loop() {
   // Bring up the display
   gDisplay.Start();
 
-  while (gDisplay.Update(start) < 10) {
+  while (gDisplay.Update(start, millis()) < 10) {
     // nothing really to do ;-)
   }
 
