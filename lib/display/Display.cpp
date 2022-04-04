@@ -30,9 +30,7 @@ void Display::Reset() {
   digit_ = 0;
 }
 
-uint32_t Display::Update(uint32_t start) {
-  uint32_t now = millis();
-
+uint32_t Display::Update(uint32_t start, uint32_t now) {
   if ((now - anim_elapsed_) > anim_period_ms_) {
     left_rain_ = RotateRight(left_rain_, 1);
     right_rain_ = RotateRight(right_rain_, 1);
