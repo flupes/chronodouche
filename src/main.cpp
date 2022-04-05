@@ -58,10 +58,6 @@ void setup() {
 // #define DEBUG
 
 void loop() {
-  // digitalWrite(kBuiltinLed, HIGH);
-  // delay(250);
-  // digitalWrite(kBuiltinLed, LOW);
-
 #ifdef DEBUG
   Serial.begin(9600);
   Serial.println("START");
@@ -70,6 +66,8 @@ void loop() {
 #endif
 
   gDisplay.Start();
+  // Let the display stabilize before reading the input (seems necessary!)?
+  delay(1000);
   State state = State::ACTIVE;
   uint32_t last_wakeup = millis();
   while (state != State::STANDBY) {
@@ -95,7 +93,7 @@ void loop() {
     }
 #endif
     if (state == State::ACTIVE) {
-      // gDisplay.Update(now);
+      gDisplay.Update(now);
     }
   }
 
@@ -108,8 +106,12 @@ void loop() {
 
   // Go to sleep
   gDisplay.Stop();
+  // Avoid bizarre interactions between the display and the interrupts ???
+  delay(2000);
   digitalWrite(kBuiltinLed, LOW);
-  // Motion with generate the pin to go LOW
-  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), MotionDetected, LOW);
-  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+  if (digitalRead(kPirOutputPin) == HIGH) {
+    // Motion with generate the pin to go LOW
+    attachInterrupt(digitalPinToInterrupt(kPirOutputPin), MotionDetected, LOW);
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_ON);
+  }
 }
