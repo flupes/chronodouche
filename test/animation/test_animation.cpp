@@ -16,12 +16,10 @@ void setup() {
 }
 
 void loop() {
-  uint32_t start = millis();
-
   // Bring up the display
   gDisplay.Start();
 
-  while (gDisplay.Update(start, millis()) < 10) {
+  while (gDisplay.Update(millis()) < 10) {
     // nothing really to do ;-)
   }
 

@@ -7,9 +7,6 @@ void Display::Start() {
   matrix_.begin(0x74);  // pass in the address
   matrix_.setRotation(0);
   matrix_.setBrightness(15);
-  anim_elapsed_ = millis();
-  bbard_elapsed_ = anim_elapsed_;
-  digit_elapsed_ = anim_elapsed_;
   Reset();
 }
 
@@ -28,9 +25,12 @@ void Display::Reset() {
   right_rain_ = kRightRain;
   bbar_ = 0;
   digit_ = 0;
+  anim_elapsed_ = millis();
+  bbard_elapsed_ = anim_elapsed_;
+  digit_elapsed_ = anim_elapsed_;
 }
 
-uint32_t Display::Update(uint32_t start, uint32_t now) {
+uint32_t Display::Update(uint32_t now) {
   if ((now - anim_elapsed_) > anim_period_ms_) {
     left_rain_ = RotateRight(left_rain_, 1);
     right_rain_ = RotateRight(right_rain_, 1);

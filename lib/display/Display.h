@@ -25,7 +25,7 @@ class Display {
   void Start();
   void Stop();
   void Reset();
-  uint32_t Update(uint32_t start, uint32_t now);
+  uint32_t Update(uint32_t now);
 
  protected:
   const uint32_t anim_period_ms_;
