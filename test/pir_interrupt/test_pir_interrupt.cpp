@@ -15,7 +15,7 @@ void NoMoreMotion() {
   gMotion = false;
   gChange = true;
   // Serial.println("ISR STEADY");
-  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), MovementDetected, RISING);
+  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), MovementDetected, FALLING);
 }
 
 void MovementDetected() {
@@ -23,7 +23,7 @@ void MovementDetected() {
   gMotion = true;
   gChange = true;
   // Serial.println("ISR MOTION");
-  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), NoMoreMotion, FALLING);
+  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), NoMoreMotion, RISING);
 }
 
 void setup() {
@@ -35,7 +35,7 @@ void setup() {
   pinMode(kPirOutputPin, INPUT);
   gMotion = false;
   gChange = false;
-  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), MovementDetected, RISING);
+  attachInterrupt(digitalPinToInterrupt(kPirOutputPin), MovementDetected, FALLING);
 }
 
 void loop() {
