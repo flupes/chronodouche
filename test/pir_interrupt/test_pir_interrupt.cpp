@@ -1,5 +1,3 @@
-// Program does NOT work for some reason: interrupt not triggered (input is always high)
-
 #include <Arduino.h>
 #include <stdint.h>
 
