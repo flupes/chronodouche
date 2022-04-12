@@ -3,16 +3,15 @@
 #include "Display.h"
 
 const uint32_t kAnimIntervalMs = 150;
-const uint32_t kDigitIntervalMs = 10l * 1000l;  // int is 16 bit only on the ATmega328p so
+const uint32_t kDigitIntervalMs = 60l * 1000l;  // int is 16 bit only on the ATmega328p so
                                                 // we need to qualify with long to do the math!
-const uint32_t kBbarIntervalMs = kDigitIntervalMs / kBottomBarLen;
-const uint32_t kNoMotionDelayMs = 5l * 1000l;
-const uint32_t kPeriodBeforeSleepMs = kNoMotionDelayMs + 5l * 1000l;
+const uint32_t kNoMotionDelayMs = 10l * 1000l;
+const uint32_t kPeriodBeforeSleepMs = 120l * 1000l - kNoMotionDelayMs;
 
 const uint8_t kBuiltinLed = 13;
 const uint8_t kPirOutputPin = 2;
 
-Display gDisplay(kAnimIntervalMs, kBbarIntervalMs, kDigitIntervalMs);
+Display gDisplay(kAnimIntervalMs, kDigitIntervalMs);
 
 enum class State { STANDBY, ACTIVE, FROZEN };
 
@@ -66,8 +65,9 @@ void loop() {
 #endif
 
   gDisplay.Start();
-  // Let the display stabilize before reading the input (seems necessary!)?
-  delay(1000);
+  // Let the display stabilize before reading the input?
+  // Not necessary: we are already detecting motion, so more triggering does not bother the state!
+  // delay(1000);
   State state = State::ACTIVE;
   uint32_t last_wakeup = millis();
   while (state != State::STANDBY) {
@@ -107,7 +107,9 @@ void loop() {
   // Go to sleep
   gDisplay.Stop();
   // Avoid bizarre interactions between the display and the interrupts ???
-  delay(2000);
+  // The powering down of the display likely creates a small voltage change on the board
+  // 3.3V supply, causing a PIR trigger (to verify with a scope)
+  delay(5000);
   digitalWrite(kBuiltinLed, LOW);
   if (digitalRead(kPirOutputPin) == HIGH) {
     // Motion with generate the pin to go LOW
