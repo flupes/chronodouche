@@ -6,9 +6,8 @@
 
 const uint32_t kAnimIntervalMs = 150;
 const uint32_t kDigitIntervalMs = 6*1000;
-const uint32_t kBbarIntervalMs = kDigitIntervalMs / kBottomBarLen;
 
-Display gDisplay(kAnimIntervalMs, kBbarIntervalMs, kDigitIntervalMs);
+Display gDisplay(kAnimIntervalMs, kDigitIntervalMs);
 
 void setup() {
   // Go to sleep to measure current before starting the display for the first time
