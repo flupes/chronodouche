@@ -26,7 +26,6 @@ void Display::Reset() {
   bbar_ = 0;
   digit_ = 0;
   anim_elapsed_ = millis();
-  bbard_elapsed_ = anim_elapsed_;
   digit_elapsed_ = anim_elapsed_;
 }
 
@@ -36,30 +35,31 @@ uint32_t Display::Update(uint32_t now) {
     right_rain_ = RotateRight(right_rain_, 1);
     anim_elapsed_ = now;
   }
-  if ((now - bbard_elapsed_) > bbar_period_ms_) {
-    bbar_ = (bbar_ + 1) % kBottomBarLen;
-    bbard_elapsed_ = now;
-  }
   if ((now - digit_elapsed_) > digit_period_ms_) {
-    digit_++;
+    digit_ += (now - digit_elapsed_) / digit_period_ms_;
     digit_elapsed_ = now;
   }
+  bbar_ = (now - digit_elapsed_) / bbar_period_ms_;
   matrix_.clear();
-  uint8_t color = LED_YELLOW;
+  uint8_t digit_color = LED_YELLOW;
   if (digit_ > 9) {
-    color = LED_RED;
+    digit_color = LED_RED;
   }
-  matrix_.drawBitmap(0, 0, DIGITS[digit_ % 10], 8, 8, color);
+  uint8_t rain_color = LED_GREEN;
+  if (digit_ > 19) {
+    rain_color = LED_YELLOW;
+  }
+  matrix_.drawBitmap(0, 0, DIGITS[digit_ % 10], 8, 8, digit_color);
   for (uint8_t b = 0; b < 8; b++) {
     const uint8_t mask = 1 << b;
     if (kBottomBar[bbar_] & mask) {
-      matrix_.drawPixel(7 - b, 7, LED_GREEN);
+      matrix_.drawPixel(7 - b, 7, rain_color);
     }
     if (left_rain_ & mask) {
-      matrix_.drawPixel(0, 7 - b, LED_GREEN);
+      matrix_.drawPixel(0, 7 - b, rain_color);
     }
     if (right_rain_ & mask) {
-      matrix_.drawPixel(7, 7 - b, LED_GREEN);
+      matrix_.drawPixel(7, 7 - b, rain_color);
     }
   }
   matrix_.writeDisplay();
