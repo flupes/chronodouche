@@ -26,7 +26,7 @@ void Display::Reset() {
   bbar_ = 0;
   digit_ = 0;
   anim_elapsed_ = millis();
-  digit_elapsed_ = anim_elapsed_;
+  start_ms_ = anim_elapsed_;
 }
 
 uint32_t Display::Update(uint32_t now) {
@@ -35,11 +35,9 @@ uint32_t Display::Update(uint32_t now) {
     right_rain_ = RotateRight(right_rain_, 1);
     anim_elapsed_ = now;
   }
-  if ((now - digit_elapsed_) > digit_period_ms_) {
-    digit_ += (now - digit_elapsed_) / digit_period_ms_;
-    digit_elapsed_ = now;
-  }
-  bbar_ = (now - digit_elapsed_) / bbar_period_ms_;
+  ldiv_t qr = ldiv(now - start_ms_, digit_period_ms_);
+  digit_ = qr.quot;
+  bbar_ = qr.rem / bbar_period_ms_;
   matrix_.clear();
   uint8_t digit_color = LED_YELLOW;
   if (digit_ > 9) {
@@ -52,7 +50,7 @@ uint32_t Display::Update(uint32_t now) {
   matrix_.drawBitmap(0, 0, DIGITS[digit_ % 10], 8, 8, digit_color);
   for (uint8_t b = 0; b < 8; b++) {
     const uint8_t mask = 1 << b;
-    if (kBottomBar[bbar_] & mask) {
+    if (kBottomBar[bbar_ % kBottomBarLen] & mask) {
       matrix_.drawPixel(7 - b, 7, rain_color);
     }
     if (left_rain_ & mask) {

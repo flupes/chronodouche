@@ -16,7 +16,7 @@ class Display {
         digit_period_ms_(digitPeriod),
         bbar_period_ms_(digitPeriod / kBottomBarLen),
         anim_elapsed_(0),
-        digit_elapsed_(0),
+        start_ms_(0),
         digit_(0),
         bbar_(0),
         matrix_(Adafruit_BicolorMatrix()) {}
@@ -31,7 +31,7 @@ class Display {
   const uint32_t digit_period_ms_;
   const uint32_t bbar_period_ms_;
   uint32_t anim_elapsed_;
-  uint32_t digit_elapsed_;
+  uint32_t start_ms_;
   uint32_t digit_;
   uint8_t bbar_;
   uint8_t left_rain_;
